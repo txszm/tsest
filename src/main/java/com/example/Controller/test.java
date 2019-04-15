@@ -12,6 +12,7 @@ public class test {
     @GetMapping("test1")
     public String  test(){
         log.info("hello debug");
+
         return "adsdsadsa";
     }
 }
