@@ -2,10 +2,12 @@ package com.example.Service.Impl;
 
 import com.example.Bean.*;
 import com.example.Dto.OrderDetailDto;
+import com.example.Dto.OrderDetaliAndMaster;
 import com.example.Dto.OrderMasterDto;
 import com.example.Entity.OrderDetail;
 import com.example.Entity.OrderMaster;
 import com.example.Entity.ProductInfo;
+import com.example.Repository.OrderDetailRepository;
 import com.example.Repository.OrderMasterRepository;
 import com.example.Service.OrderDetailService;
 import com.example.Service.OrderMasterService;
@@ -15,7 +17,10 @@ import com.example.util.CustomException;
 import com.example.util.IDUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,12 +28,15 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class OrderMasterServiceImpl implements OrderMasterService {
     @Autowired
     private OrderMasterRepository orderMasterRepository;
+    @Autowired
+    private OrderDetailRepository orderDetailRepository;
     @Autowired
     private ProductInfoService productInfoService;
     @Autowired
@@ -73,5 +81,47 @@ public class OrderMasterServiceImpl implements OrderMasterService {
         HashMap<String,String> map= Maps.newHashMap();
         map.put("orderId",orderId);
         return ResultResponse.success(map);
+    }
+
+    @Override
+    @Transactional
+    public ResultResponse findDetail(String openId, String orderId) {
+        if (StringUtils.isBlank(openId)||StringUtils.isBlank(orderId)){
+            return ResultResponse.fail(ResultEnums.PARAM_ERROR.getMsg());
+        }
+        OrderMaster orderMaster = orderMasterRepository.findByOrderIdAndBuyerOpenid(orderId, openId);
+        if (orderMaster==null){
+            return ResultResponse.fail("该用户没有订单");
+        }
+        List<OrderDetail> orderDetails = orderDetailRepository.findByOrderId(orderId);
+        OrderDetaliAndMaster orderDetaliAndMaster = OrderDetaliAndMaster.builder().orderId(orderMaster.getOrderId()).buyerName(orderMaster.getBuyerName())
+                .buyerPhone(orderMaster.getBuyerPhone()).buyerAddress(orderMaster.getBuyerAddress()).buyerOpenid(orderMaster.getBuyerOpenid())
+                .orderAmount(orderMaster.getOrderAmount()).orderStatus(orderMaster.getOrderStatus()).payStatus(orderMaster.getPayStatus())
+                .createTime(orderMaster.getCreateTime()).updateTime(orderMaster.getUpdateTime()).orderDetailList(orderDetails).build();
+        return ResultResponse.success(orderDetaliAndMaster);
+    }
+
+    @Override
+    public ResultResponse findList(String openId,Integer page,Integer size) {
+        if (StringUtils.isBlank(openId)){
+            return ResultResponse.fail("用户不存在");
+        }
+        Pageable pageable=new PageRequest(page,size);
+        List<OrderMaster> orderMasters = orderMasterRepository.findAllByBuyerOpenid(openId,pageable);
+        if (orderMasters==null){
+            return ResultResponse.fail("该用户没有订单");
+        }
+        return ResultResponse.success(orderMasters);
+    }
+
+    @Override
+    @Transactional
+    public ResultResponse cancel(String openId, String orderId) {
+        if (StringUtils.isBlank(openId)||StringUtils.isBlank(orderId)){
+            return ResultResponse.fail(ResultEnums.PARAM_ERROR.getMsg());
+        }
+        orderDetailRepository.deleteByOrderId(orderId);
+        orderMasterRepository.deleteByOrderIdAndBuyerOpenid(orderId,openId);
+        return ResultResponse.success("取消成功");
     }
 }
