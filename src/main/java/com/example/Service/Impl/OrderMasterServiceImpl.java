@@ -107,8 +107,9 @@ public class OrderMasterServiceImpl implements OrderMasterService {
             return ResultResponse.fail("用户不存在");
         }
         Pageable pageable=new PageRequest(page,size);
-        List<OrderMaster> orderMasters = orderMasterRepository.findAllByBuyerOpenid(openId,pageable);
-        if (orderMasters==null){
+        Integer orderStatus=OrderEnum.NEW.getCode();
+        List<OrderMaster> orderMasters = orderMasterRepository.findAllByBuyerOpenidAndOrderStatus(openId,orderStatus,pageable);
+        if (orderMasters.isEmpty()){
             return ResultResponse.fail("该用户没有订单");
         }
         return ResultResponse.success(orderMasters);
@@ -120,8 +121,11 @@ public class OrderMasterServiceImpl implements OrderMasterService {
         if (StringUtils.isBlank(openId)||StringUtils.isBlank(orderId)){
             return ResultResponse.fail(ResultEnums.PARAM_ERROR.getMsg());
         }
-        orderDetailRepository.deleteByOrderId(orderId);
-        orderMasterRepository.deleteByOrderIdAndBuyerOpenid(orderId,openId);
+//        orderDetailRepository.deleteByOrderId(orderId);
+//        orderMasterRepository.deleteByOrderIdAndBuyerOpenid(orderId,openId);
+        OrderMaster orderMaster = orderMasterRepository.findByOrderIdAndBuyerOpenid(orderId, openId);
+        orderMaster.setOrderStatus(OrderEnum.CANCEL.getCode());
+        orderMasterRepository.save(orderMaster);
         return ResultResponse.success("取消成功");
     }
 }
