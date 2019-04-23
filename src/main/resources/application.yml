@@ -27,3 +27,7 @@ spring:
   wechat:
     appid: wxcec0b9e65c084712
     secret: 05a7e861c1985ced86af77fb8f7163bc
+    mchId: 1529533061
+    mchKey: qwertyuiopasdfghjklzxcvbnm123456 #密匙(在微信支付平台自行设置,要求32位.建议使用随机密码)
+    keyPath: F:\下载文件\05微信点餐项目\day07\微信服务号信息_资料\证书\1529533061_20190327_cert\apiclient_cert.p12
+    notifyUrl: http://xmccjyqs.natapp1.cc/sell/pay/notify

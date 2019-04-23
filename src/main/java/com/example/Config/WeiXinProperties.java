@@ -10,4 +10,8 @@ import org.springframework.stereotype.Component;
 public class WeiXinProperties {
     private String appid;
     private String secret;
+    private String mchId;
+    private String mchKey;
+    private String keyPath;
+    private String notifyUrl;
 }
